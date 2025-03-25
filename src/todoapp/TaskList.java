@@ -13,8 +13,10 @@ public class TaskList extends JScrollPane {
     private DefaultListModel<String> listModel;
     private Set<Integer> completedTasks;
     private ArrayList<String> tasks;
+    private ProgressUpdateListener progressListener;
 
-    public TaskList() {
+    public TaskList(ProgressUpdateListener listener) {
+        this.progressListener = listener;
         completedTasks = new HashSet<>();
         tasks = new ArrayList<>();
         listModel = new DefaultListModel<>();
@@ -29,6 +31,7 @@ public class TaskList extends JScrollPane {
     public void addTask(String task) {
         tasks.add(task);
         listModel.addElement("[ ] " + task);
+        updateProgress();
     }
 
     public void toggleTaskCompletion(int index) {
@@ -38,6 +41,16 @@ public class TaskList extends JScrollPane {
             completedTasks.add(index);
         }
         listModel.set(index, (completedTasks.contains(index) ? "[✓] " : "[ ] ") + tasks.get(index));
+        updateProgress();
+    }
+
+    private void updateProgress() {
+        if (progressListener != null) {
+            int total = tasks.size();
+            int completed = completedTasks.size();
+            int progress = total > 0 ? (completed * 100) / total : 0;
+            progressListener.onProgressUpdated(progress);
+        }
     }
 
     public int getCompletedCount() {
@@ -48,6 +61,17 @@ public class TaskList extends JScrollPane {
         return tasks.size();
     }
 
+    public void clearCompletedTasks() {
+        for (int i = tasks.size() - 1; i >= 0; i--) {
+            if (completedTasks.contains(i)) {
+                tasks.remove(i);
+                listModel.remove(i);
+                completedTasks.remove(i);
+            }
+        }
+        updateProgress();
+    }
+
     private class TaskListRenderer extends DefaultListCellRenderer {
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index,
@@ -55,11 +79,12 @@ public class TaskList extends JScrollPane {
             JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             if (completedTasks.contains(index)) {
                 label.setText("[✓] " + tasks.get(index));
-                label.setForeground(Color.DARK_GRAY);
-                label.setBackground(new Color(255, 230, 230));
+                label.setForeground(Color.GRAY);
+                label.setBackground(isSelected ? new Color(220, 220, 220) : Color.WHITE);
             } else {
                 label.setText("[ ] " + tasks.get(index));
                 label.setForeground(Color.BLACK);
+                label.setBackground(isSelected ? new Color(200, 230, 255) : Color.WHITE);
             }
             return label;
         }
@@ -71,10 +96,17 @@ public class TaskList extends JScrollPane {
             int index = list.locationToIndex(e.getPoint());
             if (index >= 0) {
                 Rectangle cellBounds = list.getCellBounds(index, index);
-                if (cellBounds.contains(e.getPoint()) && e.getX() - cellBounds.x < 20) {
-                    toggleTaskCompletion(index);
+                if (cellBounds.contains(e.getPoint())) {
+                    // Verifica se o clique foi na área da checkbox (primeiros 20 pixels)
+                    if (e.getX() - cellBounds.x < 20) {
+                        toggleTaskCompletion(index);
+                    }
                 }
             }
         }
+    }
+
+    public interface ProgressUpdateListener {
+        void onProgressUpdated(int progress);
     }
 }
