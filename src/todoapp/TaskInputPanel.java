@@ -23,6 +23,25 @@ public class TaskInputPanel extends JPanel {
         addButton = new JButton("Adicionar");
         finishButton = new JButton("Finalizar Dia");
 
+        // Personalizando botões
+        addButton.setBackground(new Color(207, 196, 177));
+        addButton.setForeground(Color.black);
+        finishButton.setBackground(new Color(20, 20, 20));
+        finishButton.setForeground(Color.WHITE);
+
+        Font buttonFont = new Font(Font.SANS_SERIF, Font.BOLD, 16);
+        addButton.setFont(buttonFont);
+        finishButton.setFont(buttonFont);
+
+        addButton.setPreferredSize(new Dimension(120, 40));
+        finishButton.setPreferredSize(new Dimension(120, 40));
+
+        addButton.setBorder(BorderFactory.createEtchedBorder());
+        finishButton.setBorder(BorderFactory.createEtchedBorder());
+
+        addButton.setToolTipText("Adicionar nova tarefa");
+        finishButton.setToolTipText("Finalizar o dia");
+
         addButton.addActionListener(this::handleAddTask);
     }
 

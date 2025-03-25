@@ -22,7 +22,7 @@ public class GreenProductivityApp {
         frame.setSize(400, 500);  // Aumentei a altura para melhor visualização
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout(5, 5));  // Adicionado espaçamento
-        frame.getContentPane().setBackground(new Color(240, 240, 240));
+        frame.getContentPane().setBackground(new Color(128, 52, 7));
     }
 
     private void createComponents() {
@@ -38,6 +38,8 @@ public class GreenProductivityApp {
         // Adiciona margem interna
         JPanel contentPane = new JPanel(new BorderLayout(5, 5));
         contentPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        contentPane.setBackground(new Color(128, 52, 7));
 
         contentPane.add(headerPanel, BorderLayout.NORTH);
         contentPane.add(taskList, BorderLayout.CENTER);
