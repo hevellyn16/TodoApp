@@ -5,7 +5,7 @@ import javax.swing.SwingUtilities;
 public class Main {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            GreenProductivityApp app = new GreenProductivityApp();
+            ProductivityApp app = new ProductivityApp();
             app.show();
         });
     }

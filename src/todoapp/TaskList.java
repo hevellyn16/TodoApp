@@ -1,12 +1,11 @@
 package todoapp;
 
 import javax.swing.*;
+import javax.swing.border.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.ArrayList;
+import java.awt.event.*;
+import java.util.*;
+import todoapp.ProgressUpdateListener;
 
 public class TaskList extends JScrollPane {
     private JList<String> list;
@@ -22,15 +21,21 @@ public class TaskList extends JScrollPane {
         listModel = new DefaultListModel<>();
         list = new JList<>(listModel);
 
+        // Configurações visuais e de comportamento
         list.setCellRenderer(new TaskListRenderer());
+        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        list.setFixedCellHeight(30);
+        list.setBackground(Color.WHITE);
+        list.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         list.addMouseListener(new TaskListMouseListener());
 
         setViewportView(list);
+        setBorder(BorderFactory.createEmptyBorder());
     }
 
     public void addTask(String task) {
         tasks.add(task);
-        listModel.addElement("[ ] " + task);
+        listModel.addElement(task);
         updateProgress();
     }
 
@@ -40,25 +45,8 @@ public class TaskList extends JScrollPane {
         } else {
             completedTasks.add(index);
         }
-        listModel.set(index, (completedTasks.contains(index) ? "[✓] " : "[ ] ") + tasks.get(index));
+        list.repaint();
         updateProgress();
-    }
-
-    private void updateProgress() {
-        if (progressListener != null) {
-            int total = tasks.size();
-            int completed = completedTasks.size();
-            int progress = total > 0 ? (completed * 100) / total : 0;
-            progressListener.onProgressUpdated(progress);
-        }
-    }
-
-    public int getCompletedCount() {
-        return completedTasks.size();
-    }
-
-    public int getTotalTasks() {
-        return tasks.size();
     }
 
     public void clearCompletedTasks() {
@@ -72,21 +60,76 @@ public class TaskList extends JScrollPane {
         updateProgress();
     }
 
-    private class TaskListRenderer extends DefaultListCellRenderer {
+    public int getCompletedCount() {
+        return completedTasks.size();
+    }
+
+    public int getTotalTasks() {
+        return tasks.size();
+    }
+
+    private void updateProgress() {
+        if (progressListener != null) {
+            int total = tasks.size();
+            int completed = completedTasks.size();
+            int progress = (total > 0) ? (completed * 100) / total : 0;
+            progressListener.onProgressUpdated(progress);
+        } else {
+            System.err.println("ProgressUpdateListener não foi inicializado.");
+        }
+    }
+
+    public void removeTask(int index) {
+        if (index >= 0 && index < tasks.size()) {
+            tasks.remove(index);
+            listModel.remove(index);
+            completedTasks.remove(index);
+            updateProgress();
+        }
+    }
+
+    public JList<String> getList() {
+        return list;
+    }
+
+
+    private class TaskListRenderer implements ListCellRenderer<String> {
+        private final JPanel panel = new JPanel(new BorderLayout(5, 0));
+        private final JCheckBox checkBox = new JCheckBox();
+        private final JLabel label = new JLabel();
+
+        public TaskListRenderer() {
+            panel.setOpaque(true);
+            panel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+            checkBox.setOpaque(false);
+            checkBox.setFocusPainted(false);
+            checkBox.setBorderPainted(false);
+            checkBox.setMargin(new Insets(0, 0, 0, 1));
+            label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            label.setVerticalAlignment(SwingConstants.CENTER);
+
+            JPanel checkBoxPanel = new JPanel(new GridBagLayout());
+            checkBoxPanel.setOpaque(false);
+            checkBoxPanel.add(checkBox);
+
+            panel.add(checkBoxPanel, BorderLayout.WEST);
+            panel.add(label, BorderLayout.CENTER);
+        }
+
         @Override
-        public Component getListCellRendererComponent(JList<?> list, Object value, int index,
-                                                      boolean isSelected, boolean cellHasFocus) {
-            JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-            if (completedTasks.contains(index)) {
-                label.setText("[✓] " + tasks.get(index));
-                label.setForeground(Color.GRAY);
-                label.setBackground(isSelected ? new Color(220, 220, 220) : Color.WHITE);
-            } else {
-                label.setText("[ ] " + tasks.get(index));
+        public Component getListCellRendererComponent(JList<? extends String> list, String value,
+                                                      int index, boolean isSelected, boolean cellHasFocus) {
+            label.setText(tasks.get(index));
+            checkBox.setSelected(completedTasks.contains(index));
+
+            if (isSelected) {
+                panel.setBackground(new Color(210, 230, 255));
                 label.setForeground(Color.BLACK);
-                label.setBackground(isSelected ? new Color(200, 230, 255) : Color.WHITE);
+            } else {
+                panel.setBackground(Color.WHITE);
+                label.setForeground(completedTasks.contains(index) ? new Color(100, 100, 100) : Color.BLACK);
             }
-            return label;
+            return panel;
         }
     }
 
@@ -97,16 +140,11 @@ public class TaskList extends JScrollPane {
             if (index >= 0) {
                 Rectangle cellBounds = list.getCellBounds(index, index);
                 if (cellBounds.contains(e.getPoint())) {
-                    // Verifica se o clique foi na área da checkbox (primeiros 20 pixels)
-                    if (e.getX() - cellBounds.x < 20) {
+                    if (e.getX() - cellBounds.x < 40) {
                         toggleTaskCompletion(index);
                     }
                 }
             }
         }
-    }
-
-    public interface ProgressUpdateListener {
-        void onProgressUpdated(int progress);
     }
 }

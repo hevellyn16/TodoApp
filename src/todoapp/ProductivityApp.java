@@ -3,14 +3,14 @@ package todoapp;
 import javax.swing.*;
 import java.awt.*;
 
-public class GreenProductivityApp {
+public class ProductivityApp {
     private JFrame frame;
     private TaskList taskList;
     private TaskInputPanel inputPanel;
     private ProgressBar progressBar;
     private HeaderPanel headerPanel;
 
-    public GreenProductivityApp() {
+    public ProductivityApp() {
         initializeFrame();
         createComponents();
         setupLayout();
@@ -18,7 +18,7 @@ public class GreenProductivityApp {
     }
 
     private void initializeFrame() {
-        frame = new JFrame("Green Productivity");
+        frame = new JFrame("Productivity Manager");
         frame.setSize(400, 500);  // Aumentei a altura para melhor visualização
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout(5, 5));  // Adicionado espaçamento
@@ -64,7 +64,7 @@ public class GreenProductivityApp {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            GreenProductivityApp app = new GreenProductivityApp();
+            ProductivityApp app = new ProductivityApp();
             app.show();
         });
     }
