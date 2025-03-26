@@ -12,6 +12,7 @@ public class TaskInputPanel extends JPanel {
     private JButton addButton;
     private JButton finishButton;
     private JButton deleteButton; // Botão para excluir tarefa
+    private JButton viewCompletedButton; // Novo botão para ver tarefas concluídas
     private TaskList taskList;
 
     public TaskInputPanel(TaskList taskList) {
@@ -23,34 +24,41 @@ public class TaskInputPanel extends JPanel {
 
     private void createComponents() {
         taskInput = new JTextField();
-        addButton = new JButton("Adicionar");
-        finishButton = new JButton("Finalizar Dia");
-        deleteButton = new JButton("Excluir Tarefa");
+        addButton = new JButton("Adicionar tarefa");
+        finishButton = new JButton("Finalizar dia");
+        deleteButton = new JButton("Excluir tarefa");
+        viewCompletedButton = new JButton("Ver tarefas concluídas"); // Inicializa o novo botão
 
         // Personalizando botões
         addButton.setBackground(new Color(207, 196, 177));
         addButton.setForeground(Color.black);
-        finishButton.setBackground(new Color(20, 20, 20));
+        finishButton.setBackground(new Color(129, 174, 45));
         finishButton.setForeground(Color.WHITE);
-        deleteButton.setBackground(new Color(255, 100, 100));
-        deleteButton.setForeground(Color.black);
+        deleteButton.setBackground(new Color(20, 20, 20));
+        deleteButton.setForeground(Color.white);
+        viewCompletedButton.setBackground(new Color(236, 179, 16)); // Define cor azul para destaque
+        viewCompletedButton.setForeground(Color.white);
 
-        Font buttonFont = new Font(Font.SANS_SERIF, Font.BOLD, 16);
+        Font buttonFont = new Font(Font.SERIF, Font.BOLD, 16);
         addButton.setFont(buttonFont);
         finishButton.setFont(buttonFont);
         deleteButton.setFont(buttonFont);
+        viewCompletedButton.setFont(buttonFont);
 
         addButton.setPreferredSize(new Dimension(120, 40));
         finishButton.setPreferredSize(new Dimension(120, 40));
         deleteButton.setPreferredSize(new Dimension(120, 40));
+        viewCompletedButton.setPreferredSize(new Dimension(120, 40));
 
         addButton.setBorder(BorderFactory.createEtchedBorder());
         finishButton.setBorder(BorderFactory.createEtchedBorder());
         deleteButton.setBorder(BorderFactory.createEtchedBorder());
+        viewCompletedButton.setBorder(BorderFactory.createEtchedBorder());
 
         addButton.setToolTipText("Adicionar nova tarefa");
         finishButton.setToolTipText("Finalizar o dia");
         deleteButton.setToolTipText("Excluir tarefa selecionada");
+        viewCompletedButton.setToolTipText("Ver tarefas concluídas");
 
         // Ação para adicionar tarefa ao pressionar Enter
         taskInput.addKeyListener(new KeyAdapter() {
@@ -74,13 +82,23 @@ public class TaskInputPanel extends JPanel {
                 JOptionPane.showMessageDialog(this, "Por favor, selecione uma tarefa para excluir.", "Erro", JOptionPane.ERROR_MESSAGE);
             }
         });
+
+        // Ação para visualizar tarefas concluídas
+        viewCompletedButton.addActionListener(e -> taskList.showCompletedTasksSummary());
     }
 
     private void setupLayout() {
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 3)); // Alterado para 3 colunas
-        buttonPanel.add(addButton);
-        buttonPanel.add(deleteButton); // Adiciona o botão de exclusão
-        buttonPanel.add(finishButton);
+        JPanel topButtonPanel = new JPanel(new GridLayout(1, 2)); // Painel superior com dois botões
+        topButtonPanel.add(addButton);
+        topButtonPanel.add(deleteButton);
+
+        JPanel bottomButtonPanel = new JPanel(new GridLayout(1, 2)); // Painel inferior com os outros dois botões
+        bottomButtonPanel.add(finishButton);
+        bottomButtonPanel.add(viewCompletedButton);
+
+        JPanel buttonPanel = new JPanel(new BorderLayout());
+        buttonPanel.add(topButtonPanel, BorderLayout.NORTH);
+        buttonPanel.add(bottomButtonPanel, BorderLayout.SOUTH);
 
         add(taskInput, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);

@@ -3,6 +3,8 @@ package todoapp;
 import javax.swing.*;
 import java.awt.*;
 import javax.swing.plaf.basic.BasicProgressBarUI;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class ProgressBar extends JProgressBar {
     public ProgressBar() {
@@ -23,8 +25,25 @@ public class ProgressBar extends JProgressBar {
         });
     }
 
-    public void updateProgress(int value) {
-        setValue(value);
-        setString(value + "% completado");
+    public void updateProgress(int targetValue) {
+        Timer timer = new Timer(10, new ActionListener() { // ⏳ Intervalo de 10ms para suavizar a animação
+            int currentValue = getValue(); // Obtém o valor atual da barra
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (currentValue < targetValue) {
+                    currentValue++; // 🔼 Aumenta progressivamente
+                } else if (currentValue > targetValue) {
+                    currentValue--; // 🔽 Diminui progressivamente
+                } else {
+                    ((Timer) e.getSource()).stop(); // 🛑 Para quando atingir o alvo
+                }
+
+                setValue(currentValue);
+                setString(currentValue + "% completado");
+            }
+        });
+
+        timer.start(); // 🚀 Inicia a animação
     }
 }
