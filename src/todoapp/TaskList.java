@@ -82,10 +82,9 @@ public class TaskList extends JScrollPane {
 
     public void finalizeDay() {
         // Limpa apenas a visualização, mantendo os dados
+        saveTasks();
         listModel.clear();
-        tasks.clear();
         completedTasks.clear();
-        saveTasks(); // Salva o estado vazio (opcional, dependendo do seu requisito)
         updateProgress();
     }
 
@@ -132,7 +131,7 @@ public class TaskList extends JScrollPane {
             e.printStackTrace();
         }
 
-        updateProgress(); // ✅ Atualiza a barra de progresso após carregar as tarefas!
+        updateProgress(); // Atualiza a barra de progresso após carregar as tarefas!
     }
 
 
@@ -158,6 +157,20 @@ public class TaskList extends JScrollPane {
 
     public JList<String> getList() {
         return list;
+    }
+
+    public int getSelectedIndex() {
+        return list.getSelectedIndex();
+    }
+
+    public String getTask(int index) {
+        return tasks.get(index);
+    }
+
+    public void updateTask(int index, String newTask) {
+        tasks.set(index, newTask);
+        listModel.set(index, newTask);
+        saveTasks();
     }
 
     private class TaskListRenderer implements ListCellRenderer<String> {
@@ -227,8 +240,8 @@ public class TaskList extends JScrollPane {
     private void scheduleDailySummary() {
         Timer timer = new Timer();
         Calendar now = Calendar.getInstance();
-        now.set(Calendar.HOUR_OF_DAY, 23);
-        now.set(Calendar.MINUTE, 59);
+        now.set(Calendar.HOUR_OF_DAY, 10);
+        now.set(Calendar.MINUTE, 10);
         now.set(Calendar.SECOND, 0);
 
         timer.scheduleAtFixedRate(new TimerTask() {

@@ -13,6 +13,7 @@ public class TaskInputPanel extends JPanel {
     private JButton finishButton;
     private JButton deleteButton; // Botão para excluir tarefa
     private JButton viewCompletedButton; // Novo botão para ver tarefas concluídas
+    private JButton editButton;
     private TaskList taskList;
 
     public TaskInputPanel(TaskList taskList) {
@@ -27,16 +28,23 @@ public class TaskInputPanel extends JPanel {
         addButton = new JButton("Adicionar tarefa");
         finishButton = new JButton("Finalizar dia");
         deleteButton = new JButton("Excluir tarefa");
-        viewCompletedButton = new JButton("Ver tarefas concluídas"); // Inicializa o novo botão
+        viewCompletedButton = new JButton("Ver tarefas concluídas");
+        editButton = new JButton("Editar tarefa");
 
         // Personalizando botões
         addButton.setBackground(new Color(207, 196, 177));
         addButton.setForeground(new Color(20, 20, 20));
+
         finishButton.setBackground(new Color(129, 174, 45));
         finishButton.setForeground(new Color(20, 20, 20));
+
         deleteButton.setBackground(new Color(20, 20, 20));
         deleteButton.setForeground(Color.white);
-        viewCompletedButton.setBackground(new Color(236, 179, 16)); // Define cor azul para destaque
+
+        editButton.setBackground(new Color(147, 87, 39));
+        editButton.setForeground(new Color(255, 255, 255));
+
+        viewCompletedButton.setBackground(new Color(236, 179, 16));
         viewCompletedButton.setForeground(new Color(20, 20, 20));
 
         Font buttonFont = new Font(Font.SERIF, Font.BOLD, 16);
@@ -44,21 +52,25 @@ public class TaskInputPanel extends JPanel {
         finishButton.setFont(buttonFont);
         deleteButton.setFont(buttonFont);
         viewCompletedButton.setFont(buttonFont);
+        editButton.setFont(buttonFont);
 
         addButton.setPreferredSize(new Dimension(120, 40));
         finishButton.setPreferredSize(new Dimension(120, 40));
         deleteButton.setPreferredSize(new Dimension(120, 40));
         viewCompletedButton.setPreferredSize(new Dimension(120, 40));
+        editButton.setPreferredSize(new Dimension(120, 40));
 
         addButton.setBorder(BorderFactory.createEtchedBorder());
         finishButton.setBorder(BorderFactory.createEtchedBorder());
         deleteButton.setBorder(BorderFactory.createEtchedBorder());
         viewCompletedButton.setBorder(BorderFactory.createEtchedBorder());
+        editButton.setBorder(BorderFactory.createEtchedBorder());
 
         addButton.setToolTipText("Adicionar nova tarefa");
         finishButton.setToolTipText("Finalizar o dia");
         deleteButton.setToolTipText("Excluir tarefa selecionada");
         viewCompletedButton.setToolTipText("Ver tarefas concluídas");
+        editButton.setToolTipText("Editar tarefa selecionada");
 
         // Ação para adicionar tarefa ao pressionar Enter
         taskInput.addKeyListener(new KeyAdapter() {
@@ -72,6 +84,10 @@ public class TaskInputPanel extends JPanel {
 
         // Ação para adicionar tarefa ao clicar no botão
         addButton.addActionListener(this::handleAddTask);
+
+
+        //Ação para editar uma tarefa ao clicar no botão e na tarefa
+        editButton.addActionListener(this::handleEditTask);
 
         // Ação para excluir tarefa
         deleteButton.addActionListener(e -> {
@@ -87,10 +103,27 @@ public class TaskInputPanel extends JPanel {
         viewCompletedButton.addActionListener(e -> taskList.showCompletedTasksSummary());
     }
 
+    private void handleEditTask(ActionEvent e) {
+        int selectedIndex = taskList.getSelectedIndex(); // Obtém a tarefa selecionada
+        if (selectedIndex == -1) {
+            JOptionPane.showMessageDialog(this, "Selecione uma tarefa para editar.", "Erro", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        String currentTask = taskList.getTask(selectedIndex); // Obtém o texto da tarefa
+        String newTask = JOptionPane.showInputDialog(this, "Edite a tarefa:", currentTask);
+
+        if (newTask != null && !newTask.trim().isEmpty()) {
+            taskList.updateTask(selectedIndex, newTask); // Atualiza a tarefa
+        }
+    }
+
+
     private void setupLayout() {
-        JPanel topButtonPanel = new JPanel(new GridLayout(1, 2)); // Painel superior com dois botões
+        JPanel topButtonPanel = new JPanel(new GridLayout(1, 3)); // Painel superior com dois botões
         topButtonPanel.add(addButton);
         topButtonPanel.add(deleteButton);
+        topButtonPanel.add(editButton);
 
         JPanel bottomButtonPanel = new JPanel(new GridLayout(1, 2)); // Painel inferior com os outros dois botões
         bottomButtonPanel.add(finishButton);
