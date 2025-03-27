@@ -28,7 +28,7 @@ public class ProductivityApp {
     private void createComponents() {
         progressBar = new ProgressBar();
         taskList = new TaskList(progress -> {
-            progressBar.updateProgress(progress);
+            progressBar.updateProgress(progress); // Agora os tipos estão compatíveis
         });
         inputPanel = new TaskInputPanel(taskList);
         headerPanel = new HeaderPanel();

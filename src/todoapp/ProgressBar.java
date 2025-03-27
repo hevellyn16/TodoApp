@@ -25,15 +25,15 @@ public class ProgressBar extends JProgressBar {
         });
     }
 
-    public void updateProgress(int targetValue) {
+    public void updateProgress(int progress) {
         Timer timer = new Timer(10, new ActionListener() { // ⏳ Intervalo de 10ms para suavizar a animação
             int currentValue = getValue(); // Obtém o valor atual da barra
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (currentValue < targetValue) {
+                if (currentValue < progress) {
                     currentValue++; // 🔼 Aumenta progressivamente
-                } else if (currentValue > targetValue) {
+                } else if (currentValue > progress) {
                     currentValue--; // 🔽 Diminui progressivamente
                 } else {
                     ((Timer) e.getSource()).stop(); // 🛑 Para quando atingir o alvo
