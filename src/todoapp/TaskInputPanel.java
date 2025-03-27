@@ -12,7 +12,7 @@ public class TaskInputPanel extends JPanel {
     private JButton addButton;
     private JButton finishButton;
     private JButton deleteButton; // Botão para excluir tarefa
-    private JButton viewCompletedButton; // Novo botão para ver tarefas concluídas
+    private JButton viewAllButton; // Novo botão para ver tarefas concluídas
     private JButton editButton;
     private TaskList taskList;
 
@@ -28,7 +28,7 @@ public class TaskInputPanel extends JPanel {
         addButton = new JButton("Adicionar tarefa");
         finishButton = new JButton("Finalizar dia");
         deleteButton = new JButton("Excluir tarefa");
-        viewCompletedButton = new JButton("Ver tarefas concluídas");
+        viewAllButton = new JButton("Ver todas as tarefas");
         editButton = new JButton("Editar tarefa");
 
         // Personalizando botões
@@ -44,32 +44,32 @@ public class TaskInputPanel extends JPanel {
         editButton.setBackground(new Color(147, 87, 39));
         editButton.setForeground(new Color(255, 255, 255));
 
-        viewCompletedButton.setBackground(new Color(236, 179, 16));
-        viewCompletedButton.setForeground(new Color(20, 20, 20));
+        viewAllButton.setBackground(new Color(236, 179, 16));
+        viewAllButton.setForeground(new Color(20, 20, 20));
 
         Font buttonFont = new Font(Font.SERIF, Font.BOLD, 16);
         addButton.setFont(buttonFont);
         finishButton.setFont(buttonFont);
         deleteButton.setFont(buttonFont);
-        viewCompletedButton.setFont(buttonFont);
+        viewAllButton.setFont(buttonFont);
         editButton.setFont(buttonFont);
 
         addButton.setPreferredSize(new Dimension(120, 40));
         finishButton.setPreferredSize(new Dimension(120, 40));
         deleteButton.setPreferredSize(new Dimension(120, 40));
-        viewCompletedButton.setPreferredSize(new Dimension(120, 40));
+        viewAllButton.setPreferredSize(new Dimension(120, 40));
         editButton.setPreferredSize(new Dimension(120, 40));
 
         addButton.setBorder(BorderFactory.createEtchedBorder());
         finishButton.setBorder(BorderFactory.createEtchedBorder());
         deleteButton.setBorder(BorderFactory.createEtchedBorder());
-        viewCompletedButton.setBorder(BorderFactory.createEtchedBorder());
+        viewAllButton.setBorder(BorderFactory.createEtchedBorder());
         editButton.setBorder(BorderFactory.createEtchedBorder());
 
         addButton.setToolTipText("Adicionar nova tarefa");
         finishButton.setToolTipText("Finalizar o dia");
         deleteButton.setToolTipText("Excluir tarefa selecionada");
-        viewCompletedButton.setToolTipText("Ver tarefas concluídas");
+        viewAllButton.setToolTipText("Ver tarefas concluídas");
         editButton.setToolTipText("Editar tarefa selecionada");
 
         // Ação para adicionar tarefa ao pressionar Enter
@@ -99,8 +99,8 @@ public class TaskInputPanel extends JPanel {
             }
         });
 
-        // Ação para visualizar tarefas concluídas
-        viewCompletedButton.addActionListener(e -> taskList.showCompletedTasksSummary());
+        // Ação para visualizar todas as tarefas
+        viewAllButton.addActionListener(e -> taskList.showAllTasks());
     }
 
     private void handleEditTask(ActionEvent e) {
@@ -127,7 +127,7 @@ public class TaskInputPanel extends JPanel {
 
         JPanel bottomButtonPanel = new JPanel(new GridLayout(1, 2)); // Painel inferior com os outros dois botões
         bottomButtonPanel.add(finishButton);
-        bottomButtonPanel.add(viewCompletedButton);
+        bottomButtonPanel.add(viewAllButton);
 
         JPanel buttonPanel = new JPanel(new BorderLayout());
         buttonPanel.add(topButtonPanel, BorderLayout.NORTH);

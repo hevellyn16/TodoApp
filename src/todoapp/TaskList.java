@@ -1,6 +1,9 @@
 package todoapp;
 
 import javax.swing.*;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -81,12 +84,29 @@ public class TaskList extends JScrollPane {
     }
 
     public void finalizeDay() {
-        // Limpa apenas a visualização, mantendo os dados
+        // Salva as tarefas antes de modificar a exibição
         saveTasks();
+
+        // Criar um novo modelo contendo apenas as tarefas pendentes
+        DefaultListModel<String> newModel = new DefaultListModel<>();
+
+        for (int i = 0; i < tasks.size(); i++) {
+            if (!completedTasks.containsKey(i)) { // Mantém apenas as pendentes
+                newModel.addElement(tasks.get(i));
+            }
+        }
+
+        // Atualiza apenas a lista da página principal
         listModel.clear();
-        completedTasks.clear();
+        for (int i = 0; i < newModel.getSize(); i++) {
+            listModel.addElement(newModel.getElementAt(i));
+        }
+
+        // Atualiza a interface
         updateProgress();
     }
+
+
 
     private void saveTasks() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
@@ -240,37 +260,117 @@ public class TaskList extends JScrollPane {
     private void scheduleDailySummary() {
         Timer timer = new Timer();
         Calendar now = Calendar.getInstance();
-        now.set(Calendar.HOUR_OF_DAY, 10);
-        now.set(Calendar.MINUTE, 10);
-        now.set(Calendar.SECOND, 0);
+        Calendar scheduledTime = Calendar.getInstance();
+
+        scheduledTime.set(Calendar.HOUR_OF_DAY, 19);
+        scheduledTime.set(Calendar.MINUTE, 0);
+        scheduledTime.set(Calendar.SECOND, 0);
+
+        //Se já passou do horário, agenda para amanhã
+        if (now.after(scheduledTime)) {
+            scheduledTime.add(Calendar.DAY_OF_YEAR, 1);
+        }
 
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                SwingUtilities.invokeLater(() -> showCompletedTasksSummary());
+                SwingUtilities.invokeLater(() -> showAllTasks());
             }
-        }, now.getTime(), 24 * 60 * 60 * 1000);
+        }, scheduledTime.getTime(), 24 * 60 * 60 * 1000); //Executa a cada 24 horas
     }
 
-    public void showCompletedTasksSummary() {
-        JFrame frame = new JFrame("Resumo do Dia");
-        frame.setSize(400, 300);
+    public void showAllTasks() {
+        JFrame frame = new JFrame("Todas as tarefas");
+        frame.setSize(500, 400);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.setLayout(new BorderLayout());
 
-        JTextArea textArea = new JTextArea();
-        textArea.setEditable(false);
+        // Painel principal com padding
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(new Color(248, 200, 97)); // Cor de fundo amarelada
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        StringBuilder summary = new StringBuilder("Tarefas Concluídas Hoje:\n");
-        Date now = new Date();
-
-        for (Map.Entry<Integer, Date> entry : completedTasks.entrySet()) {
-            if (isSameDay(entry.getValue(), now)) {
-                summary.append(" ‣ ").append(tasks.get(entry.getKey())).append("\n");
+        // Painel arredondado para o conteúdo
+        JPanel roundedPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getBackground());
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 30, 30); // Bordas arredondadas
+                g2.dispose();
             }
+
+            @Override
+            public Insets getInsets() {
+                return new Insets(15, 15, 15, 15); // Padding interno
+            }
+        };
+        roundedPanel.setBackground(Color.WHITE);
+        roundedPanel.setOpaque(false);
+
+        // JTextPane para o conteúdo
+        JTextPane textPane = new JTextPane();
+        textPane.setEditable(false);
+        textPane.setBackground(new Color(255, 255, 255, 0)); // Fundo transparente
+        textPane.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+        // Configurar estilos
+        StyledDocument doc = textPane.getStyledDocument();
+        Style defaultStyle = doc.addStyle("default", null);
+        StyleConstants.setFontFamily(defaultStyle, "Segoe UI Emoji");
+        StyleConstants.setFontSize(defaultStyle, 16);
+        StyleConstants.setSpaceBelow(defaultStyle, 10);
+
+        Style headerStyle = doc.addStyle("header", defaultStyle);
+        StyleConstants.setBold(headerStyle, true);
+        StyleConstants.setFontSize(headerStyle, 18);
+        StyleConstants.setAlignment(headerStyle, StyleConstants.ALIGN_CENTER);
+
+        // Adicionar conteúdo
+        try {
+            doc.insertString(doc.getLength(), "Lista de tarefas:\n\n", headerStyle);
+
+            for (int i = 0; i < tasks.size(); i++) {
+                boolean isCompleted = completedTasks.containsKey(i);
+                String status = isCompleted ? "🍀 Concluída" : "🔴 Pendente";
+                doc.insertString(doc.getLength(), "• " + tasks.get(i) + " - " + status + "\n\n", defaultStyle);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        textArea.setText(summary.toString());
-        frame.add(new JScrollPane(textArea));
+        // Adicionar componentes ao painel arredondado
+        JScrollPane scrollPane = new JScrollPane(textPane);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder()); // Remove borda
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        textPane.setBackground(Color.WHITE);
+        roundedPanel.add(scrollPane, BorderLayout.CENTER);
+
+        // Botão de fechar estilizado
+        JButton closeButton = new JButton("FECHAR");
+        closeButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        closeButton.setForeground(Color.WHITE);
+        closeButton.setBackground(new Color(20, 20, 20));
+        closeButton.setFocusPainted(false);
+        closeButton.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(20, 20, 20), 1),
+                BorderFactory.createEmptyBorder(8, 25, 8, 25)
+        ));
+        closeButton.addActionListener(e -> frame.dispose());
+
+        // Painel do botão
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setBackground(new Color(248, 200, 97));
+        buttonPanel.add(closeButton);
+
+        // Adicionar componentes ao painel principal
+        panel.add(roundedPanel, BorderLayout.CENTER);
+        panel.add(buttonPanel, BorderLayout.SOUTH);
+
+        frame.add(panel);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 }
