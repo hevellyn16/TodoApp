@@ -1,0 +1,8 @@
+criar cards da D'bike ;false;null
+criar cronograma de posts da DiCoração;false;null
+criar cronograma de posts da D'Bike;false;null
+criar roteiros de vídeo da MSA;false;null
+reunir ideias de layout para artes da DiCoração;true;1743112709843
+mandar artes para aprovação Açaí Sobral;false;null
+agendar artes Les Amis;false;null
+criar cronograma de posts Les Amis;false;null

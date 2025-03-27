@@ -5,10 +5,13 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.io.*;
 import java.util.*;
 import java.util.Timer;
+import java.awt.datatransfer.Transferable;
 
 public class TaskList extends JScrollPane {
     private JList<String> list;
@@ -33,12 +36,72 @@ public class TaskList extends JScrollPane {
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.setFixedCellHeight(30);
         list.setBackground(Color.WHITE);
+        list.setDragEnabled(true);
+        list.setDropMode(DropMode.INSERT);
+        list.setTransferHandler(new TransferHandler() {
+            @Override
+            public boolean canImport(TransferSupport support) {
+                return support.isDataFlavorSupported(DataFlavor.stringFlavor);
+            }
+
+            @Override
+            public boolean importData(TransferSupport support) {
+                try {
+                    String data = (String) support.getTransferable().getTransferData(DataFlavor.stringFlavor);
+                    int index = list.locationToIndex(support.getDropLocation().getDropPoint());
+                    listModel.add(index, data);
+                    return true;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return false;
+                }
+            }
+        });
+
         list.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         list.addMouseListener(new TaskListMouseListener());
+
+        list.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int index = list.locationToIndex(e.getPoint());
+                if (index >= 0 && e.getClickCount() == 2) {
+                    editTask(index);
+                }
+            }
+        });
+
 
         setViewportView(list);
         setBorder(BorderFactory.createEmptyBorder());
     }
+    private void saveTasks() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
+            for (int i = 0; i < tasks.size(); i++) {
+                String task = tasks.get(i);
+                boolean isCompleted = completedTasks.containsKey(i);
+                Date completionDate = completedTasks.get(i);
+
+                String dateStr = (completionDate != null) ? String.valueOf(completionDate.getTime()) : "null";
+
+                writer.write(task + ";" + isCompleted + ";" + dateStr);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    private void updateProgress() {
+        if (progressListener != null) {
+            int total = tasks.size();
+            int completed = completedTasks.size();
+            int progress = (total > 0) ? (completed * 100) / total : 0;
+            progressListener.onProgressUpdated(progress);
+        } else {
+            System.err.println("ProgressUpdateListener não foi inicializado.");
+        }
+    }
+
 
     public void addTask(String task) {
         tasks.add(task);
@@ -106,22 +169,56 @@ public class TaskList extends JScrollPane {
         updateProgress();
     }
 
+    private void editTask(int index) {
+        String currentTask = tasks.get(index);
+        String newTask = JOptionPane.showInputDialog("Editar tarefa:", currentTask);
+        if (newTask != null && !newTask.trim().isEmpty()) {
+            tasks.set(index, newTask);
+            listModel.set(index, newTask);
+            saveTasks();
+        }
+    }
 
+    private class TaskTransferHandler extends TransferHandler {
+        @Override
+        protected Transferable createTransferable(JComponent c) {
+            JList<?> source = (JList<?>) c;
+            return new StringSelection(source.getSelectedValue().toString());
+        }
 
-    private void saveTasks() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
-            for (int i = 0; i < tasks.size(); i++) {
-                String task = tasks.get(i);
-                boolean isCompleted = completedTasks.containsKey(i);
-                Date completionDate = completedTasks.get(i);
+        @Override
+        public int getSourceActions(JComponent c) {
+            return MOVE;
+        }
 
-                String dateStr = (completionDate != null) ? String.valueOf(completionDate.getTime()) : "null";
+        @Override
+        public boolean canImport(TransferSupport support) {
+            return support.isDataFlavorSupported(DataFlavor.stringFlavor);
+        }
 
-                writer.write(task + ";" + isCompleted + ";" + dateStr);
-                writer.newLine();
+        @Override
+        public boolean importData(TransferSupport support) {
+            if (!canImport(support)) {
+                return false;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+            try {
+                JList.DropLocation dropLocation = (JList.DropLocation) support.getDropLocation();
+                int index = dropLocation.getIndex();
+                String data = (String) support.getTransferable().getTransferData(DataFlavor.stringFlavor);
+                int oldIndex = tasks.indexOf(data);
+
+                if (oldIndex != -1) {
+                    tasks.remove(oldIndex);
+                    tasks.add(index, data);
+                    listModel.remove(oldIndex);
+                    listModel.add(index, data);
+                    saveTasks();
+                    return true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return false;
         }
     }
 
@@ -164,16 +261,6 @@ public class TaskList extends JScrollPane {
         return tasks.size();
     }
 
-    private void updateProgress() {
-        if (progressListener != null) {
-            int total = tasks.size();
-            int completed = completedTasks.size();
-            int progress = (total > 0) ? (completed * 100) / total : 0;
-            progressListener.onProgressUpdated(progress);
-        } else {
-            System.err.println("ProgressUpdateListener não foi inicializado.");
-        }
-    }
 
     public JList<String> getList() {
         return list;
