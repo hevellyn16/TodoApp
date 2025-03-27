@@ -31,13 +31,13 @@ public class TaskInputPanel extends JPanel {
 
         // Personalizando botões
         addButton.setBackground(new Color(207, 196, 177));
-        addButton.setForeground(Color.black);
+        addButton.setForeground(new Color(20, 20, 20));
         finishButton.setBackground(new Color(129, 174, 45));
-        finishButton.setForeground(Color.WHITE);
+        finishButton.setForeground(new Color(20, 20, 20));
         deleteButton.setBackground(new Color(20, 20, 20));
         deleteButton.setForeground(Color.white);
         viewCompletedButton.setBackground(new Color(236, 179, 16)); // Define cor azul para destaque
-        viewCompletedButton.setForeground(Color.white);
+        viewCompletedButton.setForeground(new Color(20, 20, 20));
 
         Font buttonFont = new Font(Font.SERIF, Font.BOLD, 16);
         addButton.setFont(buttonFont);

@@ -80,6 +80,15 @@ public class TaskList extends JScrollPane {
         updateProgress();
     }
 
+    public void finalizeDay() {
+        // Limpa apenas a visualização, mantendo os dados
+        listModel.clear();
+        tasks.clear();
+        completedTasks.clear();
+        saveTasks(); // Salva o estado vazio (opcional, dependendo do seu requisito)
+        updateProgress();
+    }
+
     private void saveTasks() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
             for (int i = 0; i < tasks.size(); i++) {
@@ -101,9 +110,6 @@ public class TaskList extends JScrollPane {
     private void loadTasks() {
         File file = new File(FILE_NAME);
         if (!file.exists()) return;
-
-        tasks.clear();
-        completedTasks.clear(); // 🔄 Limpa a lista antes de carregar
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;

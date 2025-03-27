@@ -1,4 +1,4 @@
-package todoapp;
+import todoapp.ProductivityApp;
 
 import javax.swing.SwingUtilities;
 
