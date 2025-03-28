@@ -10,6 +10,7 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.io.*;
 import java.util.*;
+import java.util.List;
 import java.util.Timer;
 import java.awt.datatransfer.Transferable;
 
@@ -19,7 +20,8 @@ public class TaskList extends JScrollPane {
     private ArrayList<String> tasks;
     private ProgressUpdateListener progressListener;
     private Map<Integer, Date> completedTasks;
-    private static final String FILE_NAME = "tasks.txt";
+    private static final String FILE_MAIN = "tasks.txt";
+    private static final String FILE_HISTORY = "tasks_history.txt";
 
     public TaskList(ProgressUpdateListener listener) {
         this.progressListener = listener;
@@ -75,22 +77,37 @@ public class TaskList extends JScrollPane {
         setViewportView(list);
         setBorder(BorderFactory.createEmptyBorder());
     }
-    private void saveTasks() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
+
+    private void saveMainFile(){
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_MAIN))) {
+            for (int i = 0; i < tasks.size(); i++) {
+                if (!completedTasks.containsKey(i)) {
+                    writer.write(tasks.get(i));
+                    writer.newLine();
+                }
+            }
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    private void saveHistoryFile(){
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_HISTORY))) {
             for (int i = 0; i < tasks.size(); i++) {
                 String task = tasks.get(i);
                 boolean isCompleted = completedTasks.containsKey(i);
-                Date completionDate = completedTasks.get(i);
+                Date completedDate = completedTasks.get(i);
 
-                String dateStr = (completionDate != null) ? String.valueOf(completionDate.getTime()) : "null";
+                String dateStr = (completedDate != null) ? String.valueOf(completedDate.getTime()) : "null";
 
                 writer.write(task + ";" + isCompleted + ";" + dateStr);
                 writer.newLine();
             }
-        } catch (IOException e) {
+        } catch(IOException e){
             e.printStackTrace();
         }
     }
+
     private void updateProgress() {
         if (progressListener != null) {
             int total = tasks.size();
@@ -102,11 +119,11 @@ public class TaskList extends JScrollPane {
         }
     }
 
-
     public void addTask(String task) {
         tasks.add(task);
         listModel.addElement(task);
-        saveTasks(); // 🔄 Salva no arquivo
+        saveHistoryFile();
+        saveMainFile();// 🔄 Salva no arquivo
         updateProgress();
     }
 
@@ -117,7 +134,8 @@ public class TaskList extends JScrollPane {
             completedTasks.put(index, new Date());
         }
         list.repaint();
-        saveTasks(); // 🔄 Salva no arquivo
+        saveHistoryFile();
+        saveMainFile();// 🔄 Salva no arquivo
         updateProgress();
     }
 
@@ -126,7 +144,8 @@ public class TaskList extends JScrollPane {
             tasks.remove(index);
             listModel.remove(index);
             completedTasks.remove(index);
-            saveTasks(); // 🔄 Atualiza o arquivo
+            saveHistoryFile();
+            saveMainFile();// 🔄 Atualiza o arquivo
             updateProgress();
         }
     }
@@ -142,30 +161,35 @@ public class TaskList extends JScrollPane {
                 iterator.remove();
             }
         }
-        saveTasks(); // 🔄 Atualiza o arquivo
+        saveMainFile(); // 🔄 Atualiza o arquivo
         updateProgress();
     }
 
     public void finalizeDay() {
         // Salva as tarefas antes de modificar a exibição
-        saveTasks();
+        saveHistoryFile();
 
         // Criar um novo modelo contendo apenas as tarefas pendentes
-        DefaultListModel<String> newModel = new DefaultListModel<>();
-
+        List<String> pendingTasks = new ArrayList<>();
         for (int i = 0; i < tasks.size(); i++) {
-            if (!completedTasks.containsKey(i)) { // Mantém apenas as pendentes
-                newModel.addElement(tasks.get(i));
+            if (!completedTasks.containsKey(i)) {
+                pendingTasks.add(tasks.get(i));
             }
         }
 
-        // Atualiza apenas a lista da página principal
+        // Atualizar a lista original com apenas as tarefas pendentes
+        tasks.clear();
+        tasks.addAll(pendingTasks);
+
+        // Atualizar a interface
         listModel.clear();
-        for (int i = 0; i < newModel.getSize(); i++) {
-            listModel.addElement(newModel.getElementAt(i));
+        for (String task : tasks) {
+            listModel.addElement(task);
         }
 
-        // Atualiza a interface
+        completedTasks.clear(); // Esvazia o mapa de tarefas concluídas para o novo dia
+
+        saveMainFile();
         updateProgress();
     }
 
@@ -175,7 +199,8 @@ public class TaskList extends JScrollPane {
         if (newTask != null && !newTask.trim().isEmpty()) {
             tasks.set(index, newTask);
             listModel.set(index, newTask);
-            saveTasks();
+            saveHistoryFile();
+            saveMainFile();
         }
     }
 
@@ -212,7 +237,8 @@ public class TaskList extends JScrollPane {
                     tasks.add(index, data);
                     listModel.remove(oldIndex);
                     listModel.add(index, data);
-                    saveTasks();
+                    saveMainFile();
+                    saveHistoryFile();
                     return true;
                 }
             } catch (Exception e) {
@@ -222,9 +248,8 @@ public class TaskList extends JScrollPane {
         }
     }
 
-
     private void loadTasks() {
-        File file = new File(FILE_NAME);
+        File file = new File(FILE_MAIN);
         if (!file.exists()) return;
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
@@ -251,8 +276,6 @@ public class TaskList extends JScrollPane {
         updateProgress(); // Atualiza a barra de progresso após carregar as tarefas!
     }
 
-
-
     public int getCompletedCount() {
         return completedTasks.size();
     }
@@ -260,7 +283,6 @@ public class TaskList extends JScrollPane {
     public int getTotalTasks() {
         return tasks.size();
     }
-
 
     public JList<String> getList() {
         return list;
@@ -277,7 +299,8 @@ public class TaskList extends JScrollPane {
     public void updateTask(int index, String newTask) {
         tasks.set(index, newTask);
         listModel.set(index, newTask);
-        saveTasks();
+        saveMainFile();
+        saveHistoryFile();
     }
 
     private class TaskListRenderer implements ListCellRenderer<String> {
@@ -418,10 +441,22 @@ public class TaskList extends JScrollPane {
         try {
             doc.insertString(doc.getLength(), "Lista de tarefas:\n\n", headerStyle);
 
-            for (int i = 0; i < tasks.size(); i++) {
-                boolean isCompleted = completedTasks.containsKey(i);
-                String status = isCompleted ? "🍀 Concluída" : "🔴 Pendente";
-                doc.insertString(doc.getLength(), "• " + tasks.get(i) + " - " + status + "\n\n", defaultStyle);
+            File file = new File(FILE_HISTORY);
+            if (file.exists()) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        String[] parts = line.split(";");
+                        if (parts.length >= 3) {
+                            String task = parts[0];
+                            boolean isCompleted = Boolean.parseBoolean(parts[1]);
+                            String dateStr = parts[2];
+
+                            String status = isCompleted ? "🍀 Concluída" : "🔴 Pendente";
+                            doc.insertString(doc.getLength(), "• " + task + " - " + status + "\n\n", defaultStyle);
+                        }
+                    }
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -52,7 +52,7 @@ public class ProductivityApp {
     private void setupEventHandlers() {
         // Configura o botão "Finalizar Dia" para limpar tarefas concluídas
         inputPanel.setFinishDayAction(e -> {
-            taskList.clearCompletedTasks();
+            taskList.finalizeDay();
             JOptionPane.showMessageDialog(frame, "Dia finalizado! Tarefas concluídas removidas.");
         });
     }

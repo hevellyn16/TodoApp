@@ -1,5 +1,1 @@
-criar cards da D'bike ;false;null
-criar cronograma de posts da DiCoração;false;null
-criar cronograma de posts da D'Bike;false;null
-reunir ideias de layout para artes da DiCoração;false;null
-agendar artes Les Amis;false;null
+oi
