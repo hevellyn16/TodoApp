@@ -95,7 +95,7 @@ public class TaskInputPanel extends JPanel {
             if (selectedIndex != -1) {
                 taskList.removeTask(selectedIndex); // Remova a tarefa
             } else {
-                JOptionPane.showMessageDialog(this, "Por favor, selecione uma tarefa para excluir.", "Erro", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Por favor, selecione uma tarefa para excluir.", "Erro", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -106,12 +106,12 @@ public class TaskInputPanel extends JPanel {
     private void handleEditTask(ActionEvent e) {
         int selectedIndex = taskList.getSelectedIndex(); // Obtém a tarefa selecionada
         if (selectedIndex == -1) {
-            JOptionPane.showMessageDialog(this, "Selecione uma tarefa para editar.", "Erro", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Selecione uma tarefa para editar.", "Erro", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         String currentTask = taskList.getTask(selectedIndex); // Obtém o texto da tarefa
-        String newTask = JOptionPane.showInputDialog(this, "Edite a tarefa:", currentTask);
+        String newTask = JOptionPane.showInputDialog(null, "Edite a tarefa:", currentTask);
 
         if (newTask != null && !newTask.trim().isEmpty()) {
             taskList.updateTask(selectedIndex, newTask); // Atualiza a tarefa
@@ -143,7 +143,7 @@ public class TaskInputPanel extends JPanel {
             taskList.addTask(task);
             taskInput.setText("");
         } else {
-            JOptionPane.showMessageDialog(this, "Por favor, insira uma tarefa.", "Erro", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Por favor, insira uma tarefa.", "Erro", JOptionPane.ERROR_MESSAGE);
         }
     }
 
