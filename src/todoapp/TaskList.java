@@ -40,25 +40,7 @@ public class TaskList extends JScrollPane {
         list.setBackground(Color.WHITE);
         list.setDragEnabled(true);
         list.setDropMode(DropMode.INSERT);
-        list.setTransferHandler(new TransferHandler() {
-            @Override
-            public boolean canImport(TransferSupport support) {
-                return support.isDataFlavorSupported(DataFlavor.stringFlavor);
-            }
-
-            @Override
-            public boolean importData(TransferSupport support) {
-                try {
-                    String data = (String) support.getTransferable().getTransferData(DataFlavor.stringFlavor);
-                    int index = list.locationToIndex(support.getDropLocation().getDropPoint());
-                    listModel.add(index, data);
-                    return true;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return false;
-                }
-            }
-        });
+        list.setTransferHandler(new TaskReorderHandler());
 
         list.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         list.addMouseListener(new TaskListMouseListener());
@@ -204,10 +186,16 @@ public class TaskList extends JScrollPane {
         }
     }
 
-    private class TaskTransferHandler extends TransferHandler {
+    private class TaskReorderHandler extends TransferHandler {
+        private int draggedIndex = -1;
+
         @Override
         protected Transferable createTransferable(JComponent c) {
             JList<?> source = (JList<?>) c;
+            draggedIndex = source.getSelectedIndex();
+
+            if (draggedIndex == -1) return null; // Se nada foi selecionado, cancela
+
             return new StringSelection(source.getSelectedValue().toString());
         }
 
@@ -223,28 +211,47 @@ public class TaskList extends JScrollPane {
 
         @Override
         public boolean importData(TransferSupport support) {
-            if (!canImport(support)) {
-                return false;
-            }
-            try {
-                JList.DropLocation dropLocation = (JList.DropLocation) support.getDropLocation();
-                int index = dropLocation.getIndex();
-                String data = (String) support.getTransferable().getTransferData(DataFlavor.stringFlavor);
-                int oldIndex = tasks.indexOf(data);
+            if (!canImport(support)) return false;
 
-                if (oldIndex != -1) {
-                    tasks.remove(oldIndex);
-                    tasks.add(index, data);
-                    listModel.remove(oldIndex);
-                    listModel.add(index, data);
-                    saveMainFile();
-                    saveHistoryFile();
-                    return true;
+            try {
+                JList<?> targetList = (JList<?>) support.getComponent();
+                JList.DropLocation dropLocation = (JList.DropLocation) support.getDropLocation();
+                int targetIndex = dropLocation.getIndex();
+
+                if (draggedIndex == -1 || targetIndex == -1 || draggedIndex == targetIndex) {
+                    return false; // Se índice inválido, cancela
                 }
+
+                DefaultListModel<String> model = (DefaultListModel<String>) targetList.getModel();
+
+                String task = model.get(draggedIndex);
+
+
+                model.remove(draggedIndex);
+
+                // Ajusta índice caso o item seja movido para baixo
+                if (targetIndex > draggedIndex) {
+                    targetIndex--;
+                }
+
+                // Insere na nova posição
+                model.add(targetIndex, task);
+
+                // Atualiza a lista interna `tasks`
+                tasks.remove(draggedIndex);
+                tasks.add(targetIndex, task);
+
+                // Atualiza a seleção para o item movido
+                targetList.setSelectedIndex(targetIndex);
+
+                saveMainFile();
+                saveHistoryFile();
+
+                return true;
             } catch (Exception e) {
                 e.printStackTrace();
+                return false;
             }
-            return false;
         }
     }
 
