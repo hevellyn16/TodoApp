@@ -255,25 +255,13 @@ public class TaskList extends JScrollPane {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(";");
-                if (parts.length >= 2) {
-                    String task = parts[0];
-                    boolean isCompleted = Boolean.parseBoolean(parts[1]);
-                    String dateStr = parts[2];
-
-                    tasks.add(task);
-                    listModel.addElement(task);
-
-                    if (isCompleted && !"null".equals(dateStr)) {
-                        completedTasks.put(tasks.size() - 1, new Date(Long.parseLong(dateStr)));
-                    }
-                }
+                tasks.add(line);
+                listModel.addElement(line);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        updateProgress(); // Atualiza a barra de progresso após carregar as tarefas!
+        updateProgress();
     }
 
     public int getCompletedCount() {

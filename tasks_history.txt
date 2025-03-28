@@ -1,1 +1,3 @@
-oi;false;null
+método para arrastar as tarefas para reorganizar;false;null
+tags para tarefas;false;null
+opção de colocar sub tarefas;false;null
