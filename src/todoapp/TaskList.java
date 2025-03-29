@@ -386,7 +386,7 @@ public class TaskList extends JScrollPane {
 
     public void showAllTasks() {
         JFrame frame = new JFrame("Todas as tarefas");
-        frame.setSize(500, 400);
+        frame.setSize(700, 600);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setLayout(new BorderLayout());
 

@@ -19,7 +19,7 @@ public class ProductivityApp {
 
     private void initializeFrame() {
         frame = new JFrame("Productivity Manager");
-        frame.setSize(400, 500);  // Aumentei a altura para melhor visualização
+        frame.setSize(700, 600);  // Aumentei a altura para melhor visualização
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout(5, 5));  // Adicionado espaçamento
         frame.getContentPane().setBackground(new Color(128, 52, 7));
