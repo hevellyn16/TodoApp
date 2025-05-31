@@ -2,152 +2,148 @@ package todoapp;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 
 public class TaskInputPanel extends JPanel {
-    private JTextField taskInput;
-    private JButton addButton;
-    private JButton finishButton;
-    private JButton deleteButton; // Botão para excluir tarefa
-    private JButton viewAllButton; // Novo botão para ver tarefas concluídas
-    private JButton editButton;
+    private JButton openActionsButton; // botão redondo com "+"
+    private JButton finishButton;      // botão de finalizar dia (precisa estar acessível)
+    private ActionListener finishDayListener; // armazena listener se botão ainda não foi criado
     private TaskList taskList;
 
     public TaskInputPanel(TaskList taskList) {
         this.taskList = taskList;
         setLayout(new BorderLayout());
-        createComponents();
-        setupLayout();
+        createFloatingButton();
     }
 
-    private void createComponents() {
-        taskInput = new JTextField();
-        addButton = new JButton("Adicionar tarefa");
-        finishButton = new JButton("Finalizar dia");
-        deleteButton = new JButton("Excluir tarefa");
-        viewAllButton = new JButton("Ver todas as tarefas");
-        editButton = new JButton("Editar tarefa");
+    private void createFloatingButton() {
+        openActionsButton = new JButton("+");
+        openActionsButton.setFont(new Font("Arial", Font.BOLD, 28));
+        openActionsButton.setForeground(Color.WHITE);
+        openActionsButton.setBackground(new Color(70, 130, 180));
+        openActionsButton.setFocusPainted(false);
+        openActionsButton.setBorderPainted(false);
+        openActionsButton.setContentAreaFilled(true);
+        openActionsButton.setOpaque(true);
+        openActionsButton.setPreferredSize(new Dimension(60, 60));
+        openActionsButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        // Personalizando botões
-        addButton.setBackground(new Color(207, 196, 177));
-        addButton.setForeground(new Color(20, 20, 20));
-
-        finishButton.setBackground(new Color(129, 174, 45));
-        finishButton.setForeground(new Color(20, 20, 20));
-
-        deleteButton.setBackground(new Color(20, 20, 20));
-        deleteButton.setForeground(Color.white);
-
-        editButton.setBackground(new Color(147, 87, 39));
-        editButton.setForeground(new Color(255, 255, 255));
-
-        viewAllButton.setBackground(new Color(236, 179, 16));
-        viewAllButton.setForeground(new Color(20, 20, 20));
-
-        Font buttonFont = new Font(Font.SERIF, Font.BOLD, 16);
-        addButton.setFont(buttonFont);
-        finishButton.setFont(buttonFont);
-        deleteButton.setFont(buttonFont);
-        viewAllButton.setFont(buttonFont);
-        editButton.setFont(buttonFont);
-
-        addButton.setPreferredSize(new Dimension(120, 40));
-        finishButton.setPreferredSize(new Dimension(120, 40));
-        deleteButton.setPreferredSize(new Dimension(120, 40));
-        viewAllButton.setPreferredSize(new Dimension(120, 40));
-        editButton.setPreferredSize(new Dimension(120, 40));
-
-        addButton.setBorder(BorderFactory.createEtchedBorder());
-        finishButton.setBorder(BorderFactory.createEtchedBorder());
-        deleteButton.setBorder(BorderFactory.createEtchedBorder());
-        viewAllButton.setBorder(BorderFactory.createEtchedBorder());
-        editButton.setBorder(BorderFactory.createEtchedBorder());
-
-        addButton.setToolTipText("Adicionar nova tarefa");
-        finishButton.setToolTipText("Finalizar o dia");
-        deleteButton.setToolTipText("Excluir tarefa selecionada");
-        viewAllButton.setToolTipText("Ver tarefas concluídas");
-        editButton.setToolTipText("Editar tarefa selecionada");
-
-        // Ação para adicionar tarefa ao pressionar Enter
-        taskInput.addKeyListener(new KeyAdapter() {
+        // Torna o botão visualmente redondo
+        openActionsButton.setUI(new javax.swing.plaf.basic.BasicButtonUI() {
             @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    handleAddTask(new ActionEvent(taskInput, ActionEvent.ACTION_PERFORMED, null));
-                }
+            public void installUI(JComponent c) {
+                super.installUI(c);
+                c.setBorder(BorderFactory.createEmptyBorder());
+                c.setBackground(new Color(70, 130, 180));
+                c.setForeground(Color.WHITE);
+            }
+
+            @Override
+            public void paint(Graphics g, JComponent c) {
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(c.getBackground());
+                g2.fillOval(0, 0, c.getWidth(), c.getHeight());
+                super.paint(g, c);
             }
         });
 
-        // Ação para adicionar tarefa ao clicar no botão
-        addButton.addActionListener(this::handleAddTask);
+        // Posiciona o botão no canto inferior direito
+        JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        wrapper.setOpaque(false);
+        this.setOpaque(false);
+        wrapper.add(openActionsButton);
+        add(wrapper, BorderLayout.SOUTH);
 
+        openActionsButton.addActionListener(e -> openTaskManagerWindow());
+    }
 
-        //Ação para editar uma tarefa ao clicar no botão e na tarefa
-        editButton.addActionListener(this::handleEditTask);
+    private void openTaskManagerWindow() {
+        JFrame taskFrame = new JFrame("Gerenciar Tarefas");
+        taskFrame.setSize(450, 300);
+        taskFrame.setLocationRelativeTo(null);
+        taskFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        // Ação para excluir tarefa
-        deleteButton.addActionListener(e -> {
-            int selectedIndex = taskList.getList().getSelectedIndex(); // Obtenha o índice da tarefa selecionada
-            if (selectedIndex != -1) {
-                taskList.removeTask(selectedIndex); // Remova a tarefa
+        JTextField taskInput = new JTextField();
+        taskInput.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 16));
+        taskInput.setPreferredSize(new Dimension(300, 40));
+
+        JButton addButton = new JButton("Adicionar");
+        JButton deleteButton = new JButton("Excluir");
+        finishButton = new JButton("Finalizar dia");
+        JButton viewAllButton = new JButton("Ver todas");
+
+        // Estilo dos botões
+        JButton[] buttons = {addButton, deleteButton, finishButton, viewAllButton};
+        for (JButton btn : buttons) {
+            btn.setFont(new Font(Font.SERIF, Font.BOLD, 16));
+            btn.setPreferredSize(new Dimension(160, 40));
+            btn.setBorder(BorderFactory.createEtchedBorder());
+        }
+
+        addButton.setBackground(new Color(207, 196, 177));
+        deleteButton.setBackground(Color.BLACK);
+        deleteButton.setForeground(Color.WHITE);
+        finishButton.setBackground(new Color(129, 174, 45));
+        viewAllButton.setBackground(new Color(236, 179, 16));
+
+        // Painel com o campo de texto e os botões
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        panel.add(taskInput, gbc);
+
+        gbc.gridwidth = 1;
+        gbc.gridy = 1; gbc.gridx = 0;
+        panel.add(addButton, gbc);
+        gbc.gridx = 1;
+        panel.add(deleteButton, gbc);
+
+        gbc.gridy = 2; gbc.gridx = 0;
+        panel.add(finishButton, gbc);
+        gbc.gridx = 1;
+        panel.add(viewAllButton, gbc);
+
+        // Ações dos botões
+        addButton.addActionListener(e -> {
+            String task = taskInput.getText();
+            if (!task.isEmpty()) {
+                taskList.addTask(task);
+                taskInput.setText("");
             } else {
-                JOptionPane.showMessageDialog(null, "Por favor, selecione uma tarefa para excluir.", "Erro", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Por favor, insira uma tarefa.", "Erro", JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        // Ação para visualizar todas as tarefas
+        deleteButton.addActionListener(e -> {
+            int selectedIndex = taskList.getSelectedIndex();
+            if (selectedIndex != -1) {
+                taskList.removeTask(selectedIndex);
+            } else {
+                JOptionPane.showMessageDialog(null, "Selecione uma tarefa para excluir.", "Erro", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
         viewAllButton.addActionListener(e -> taskList.showAllTasks());
-    }
 
-    private void handleEditTask(ActionEvent e) {
-        int selectedIndex = taskList.getSelectedIndex(); // Obtém a tarefa selecionada
-        if (selectedIndex == -1) {
-            JOptionPane.showMessageDialog(null, "Selecione uma tarefa para editar.", "Erro", JOptionPane.ERROR_MESSAGE);
-            return;
+        // Aplica listener se já foi definido
+        if (finishDayListener != null) {
+            finishButton.addActionListener(finishDayListener);
         }
 
-        String currentTask = taskList.getTask(selectedIndex); // Obtém o texto da tarefa
-        String newTask = JOptionPane.showInputDialog(null, "Edite a tarefa:", currentTask);
-
-        if (newTask != null && !newTask.trim().isEmpty()) {
-            taskList.updateTask(selectedIndex, newTask); // Atualiza a tarefa
-        }
-    }
-
-
-    private void setupLayout() {
-        JPanel topButtonPanel = new JPanel(new GridLayout(1, 3)); // Painel superior com dois botões
-        topButtonPanel.add(addButton);
-        topButtonPanel.add(deleteButton);
-        topButtonPanel.add(editButton);
-
-        JPanel bottomButtonPanel = new JPanel(new GridLayout(1, 2)); // Painel inferior com os outros dois botões
-        bottomButtonPanel.add(finishButton);
-        bottomButtonPanel.add(viewAllButton);
-
-        JPanel buttonPanel = new JPanel(new BorderLayout());
-        buttonPanel.add(topButtonPanel, BorderLayout.NORTH);
-        buttonPanel.add(bottomButtonPanel, BorderLayout.SOUTH);
-
-        add(taskInput, BorderLayout.CENTER);
-        add(buttonPanel, BorderLayout.SOUTH);
-    }
-
-    private void handleAddTask(ActionEvent e) {
-        String task = taskInput.getText();
-        if (!task.isEmpty()) {
-            taskList.addTask(task);
-            taskInput.setText("");
-        } else {
-            JOptionPane.showMessageDialog(null, "Por favor, insira uma tarefa.", "Erro", JOptionPane.ERROR_MESSAGE);
-        }
+        taskFrame.add(panel);
+        taskFrame.setVisible(true);
     }
 
     public void setFinishDayAction(ActionListener listener) {
-        finishButton.addActionListener(listener);
+        this.finishDayListener = listener;
+        if (finishButton != null) {
+            finishButton.addActionListener(listener);
+        }
     }
 }

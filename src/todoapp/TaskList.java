@@ -22,6 +22,8 @@ public class TaskList extends JScrollPane {
     private Map<Integer, Date> completedTasks;
     private static final String FILE_MAIN = "tasks.txt";
     private static final String FILE_HISTORY = "tasks_history.txt";
+    private Map<Integer, Date> creationDates = new HashMap<>();
+
 
     public TaskList(ProgressUpdateListener listener) {
         this.progressListener = listener;
