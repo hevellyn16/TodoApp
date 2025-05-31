@@ -2,6 +2,8 @@ package todoapp;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class ProductivityApp {
     private JFrame frame;
@@ -66,6 +68,7 @@ public class ProductivityApp {
         SwingUtilities.invokeLater(() -> {
             ProductivityApp app = new ProductivityApp();
             app.show();
+
         });
     }
 }

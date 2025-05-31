@@ -9,6 +9,10 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.io.*;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.List;
 import java.util.Timer;
@@ -23,7 +27,41 @@ public class TaskList extends JScrollPane {
     private static final String FILE_MAIN = "tasks.txt";
     private static final String FILE_HISTORY = "tasks_history.txt";
     private Map<Integer, Date> creationDates = new HashMap<>();
+    private List<Task> taskObjects = new ArrayList<>();
 
+
+    class Task {
+        String description;
+        boolean completed;
+        Date createdAt;
+        Date completedAt;
+        List<String> tags;
+        int priority;
+
+        public Task(String desc, boolean comp, Date created, Date completed, List<String> tags, int priority) {
+            this.description = desc;
+            this.completed = comp;
+            this.createdAt = created;
+            this.completedAt = completed;
+            this.tags = tags;
+            this.priority = priority;
+        }
+
+        public String toFileString() {
+            return String.join(";",
+                    description,
+                    String.valueOf(completed),
+                    String.valueOf(createdAt.getTime()),
+                    completedAt != null ? String.valueOf(completedAt.getTime()) : "null",
+                    String.join(",", tags),
+                    String.valueOf(priority)
+            );
+        }
+
+        public String toDisplayString() {
+            return description + " [Prioridade: " + priority + ", Tags: " + String.join(", ", tags) + "]";
+        }
+    }
 
     public TaskList(ProgressUpdateListener listener) {
         this.progressListener = listener;
@@ -33,8 +71,6 @@ public class TaskList extends JScrollPane {
         list = new JList<>(listModel);
 
         loadTasks(); // 🚀 Carrega as tarefas ao iniciar
-
-        scheduleDailySummary();
 
         list.setCellRenderer(new TaskListRenderer());
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -62,35 +98,50 @@ public class TaskList extends JScrollPane {
         setBorder(BorderFactory.createEmptyBorder());
     }
 
-    private void saveMainFile(){
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_MAIN))) {
-            for (int i = 0; i < tasks.size(); i++) {
-                if (!completedTasks.containsKey(i)) {
-                    writer.write(tasks.get(i));
-                    writer.newLine();
-                }
-            }
-        } catch(IOException e){
-            e.printStackTrace();
-        }
-    }
 
-    private void saveHistoryFile(){
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_HISTORY))) {
+    private void saveMainFile() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_MAIN))) {
             for (int i = 0; i < tasks.size(); i++) {
                 String task = tasks.get(i);
                 boolean isCompleted = completedTasks.containsKey(i);
-                Date completedDate = completedTasks.get(i);
-
-                String dateStr = (completedDate != null) ? String.valueOf(completedDate.getTime()) : "null";
-
-                writer.write(task + ";" + isCompleted + ";" + dateStr);
+                // Salva a tarefa com um indicador de conclusão
+                writer.write(task + ";" + isCompleted);
                 writer.newLine();
             }
-        } catch(IOException e){
+        } catch (IOException e) {
+            System.err.println("Erro ao salvar o arquivo principal: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
+
+    private void saveHistoryFile() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_HISTORY))) {
+            for (int i = 0; i < taskObjects.size(); i++) { // Use taskObjects para garantir que você tenha todos os dados
+                Task task = taskObjects.get(i);
+                String taskDescription = task.description;
+                boolean isCompleted = task.completed;
+                Date completedDate = task.completedAt;
+                Date creationDate = task.createdAt;
+                List<String> tags = task.tags;
+                int priority = task.priority;
+
+                String createdStr = (creationDate != null) ? String.valueOf(creationDate.getTime()) : "null";
+                String completedStr = (completedDate != null) ? String.valueOf(completedDate.getTime()) : "null";
+                String tagsStr = String.join(",", tags); // Converte a lista de tags em uma string
+                String priorityStr = String.valueOf(priority);
+
+                // Salva a tarefa com todos os campos necessários
+                writer.write(taskDescription + ";" + isCompleted + ";" + createdStr + ";" + completedStr + ";" + tagsStr + ";" + priorityStr);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.err.println("Erro ao salvar o arquivo de histórico: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+
 
     private void updateProgress() {
         if (progressListener != null) {
@@ -106,9 +157,22 @@ public class TaskList extends JScrollPane {
     public void addTask(String task) {
         tasks.add(task);
         listModel.addElement(task);
+        int index = tasks.size() - 1;
+        creationDates.put(index, new Date()); // Salva a data de criação
+
         saveHistoryFile();
-        saveMainFile();// 🔄 Salva no arquivo
+        saveMainFile();
         updateProgress();
+    }
+
+    public void addTask(String desc, String tagsStr, int priority) {
+        List<String> tags = Arrays.asList(tagsStr.split(","));
+        Task task = new Task(desc, false, new Date(), null, tags, priority);
+        taskObjects.add(task); // <- lista interna de Task
+        tasks.add(desc);    // <- lista simples (para compatibilidade antiga)
+        listModel.addElement(task.toDisplayString());
+        creationDates.put(tasks.size() - 1, task.createdAt);
+        saveHistoryFile();
     }
 
     public void toggleTaskCompletion(int index) {
@@ -123,68 +187,70 @@ public class TaskList extends JScrollPane {
         updateProgress();
     }
 
-    public void removeTask(int index) {
-        if (index >= 0 && index < tasks.size()) {
-            tasks.remove(index);
-            listModel.remove(index);
-            completedTasks.remove(index);
-            saveHistoryFile();
-            saveMainFile();// 🔄 Atualiza o arquivo
-            updateProgress();
-        }
+    public boolean removeTask(String description) {
+        return tasks.removeIf(task -> task.equalsIgnoreCase(description.trim()));
     }
 
+
     public void clearCompletedTasks() {
-        Iterator<Map.Entry<Integer, Date>> iterator = completedTasks.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<Integer, Date> entry = iterator.next();
-            int index = entry.getKey();
+        List<Integer> indices = new ArrayList<>(completedTasks.keySet());
+        Collections.sort(indices, Collections.reverseOrder()); // Remove de trás pra frente
+
+        for (int index : indices) {
             if (index < tasks.size()) {
                 tasks.remove(index);
                 listModel.remove(index);
-                iterator.remove();
             }
         }
-        saveMainFile(); // 🔄 Atualiza o arquivo
+        completedTasks.clear();
+        saveMainFile();
+        saveHistoryFile();
         updateProgress();
     }
 
     public void finalizeDay() {
-        // Salva as tarefas antes de modificar a exibição
-        saveHistoryFile();
-
-        // Criar um novo modelo contendo apenas as tarefas pendentes
-        List<String> pendingTasks = new ArrayList<>();
-        for (int i = 0; i < tasks.size(); i++) {
-            if (!completedTasks.containsKey(i)) {
-                pendingTasks.add(tasks.get(i));
-            }
-        }
-
-        // Atualizar a lista original com apenas as tarefas pendentes
+        saveHistoryFile(); // Salva antes de apagar
         tasks.clear();
-        tasks.addAll(pendingTasks);
-
-        // Atualizar a interface
         listModel.clear();
-        for (String task : tasks) {
-            listModel.addElement(task);
-        }
-
-        completedTasks.clear(); // Esvazia o mapa de tarefas concluídas para o novo dia
-
-        saveMainFile();
+        completedTasks.clear();
+        saveMainFile(); // Sobrescreve o arquivo principal
         updateProgress();
     }
 
     private void editTask(int index) {
         String currentTask = tasks.get(index);
-        String newTask = JOptionPane.showInputDialog("Editar tarefa:", currentTask);
-        if (newTask != null && !newTask.trim().isEmpty()) {
-            tasks.set(index, newTask);
-            listModel.set(index, newTask);
-            saveHistoryFile();
-            saveMainFile();
+
+        Object[] options = {"Editar", "Excluir", "Cancelar"};
+        int choice = JOptionPane.showOptionDialog(
+                null,
+                "O que deseja fazer com a tarefa?\n\n" + currentTask,
+                "Editar ou Excluir",
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]
+        );
+
+        if (choice == JOptionPane.YES_OPTION) { // Editar
+            String newTask = JOptionPane.showInputDialog("Editar tarefa:", currentTask);
+            if (newTask != null && !newTask.trim().isEmpty()) {
+                tasks.set(index, newTask);
+                listModel.set(index, newTask);
+                saveHistoryFile();
+                saveMainFile();
+            }
+        } else if (choice == JOptionPane.NO_OPTION) { // Excluir
+            int confirm = JOptionPane.showConfirmDialog(
+                    null,
+                    "Tem certeza que deseja excluir esta tarefa?\n\n" + currentTask,
+                    "Confirmação",
+                    JOptionPane.YES_NO_OPTION
+            );
+            if (confirm == JOptionPane.YES_OPTION) {
+                String taskDescription = tasks.get(index);  // pega a descrição da tarefa
+                removeTask(taskDescription);  // passa a descrição como argumento
+            }
         }
     }
 
@@ -258,20 +324,52 @@ public class TaskList extends JScrollPane {
     }
 
     private void loadTasks() {
-        File file = new File(FILE_MAIN);
+        File file = new File(FILE_HISTORY);
         if (!file.exists()) return;
+
+        tasks.clear();
+        listModel.clear();
+        completedTasks.clear();
+        creationDates.clear();
+        taskObjects.clear(); // Limpa a lista de objetos de tarefa
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                tasks.add(line);
-                listModel.addElement(line);
+                String[] parts = line.split(";");
+                if (parts.length >= 6) {
+                    String desc = parts[0];
+                    boolean isCompleted = Boolean.parseBoolean(parts[1]);
+                    long createdMillis = Long.parseLong(parts[2]);
+                    Date createdDate = new Date(createdMillis);
+                    Date completedDate = parts[3].equals("null") ? null : new Date(Long.parseLong(parts[3]));
+                    List<String> tags = Arrays.asList(parts[4].split(","));
+                    int priority = Integer.parseInt(parts[5]);
+
+                    Task task = new Task(desc, isCompleted, createdDate, completedDate, tags, priority);
+                    taskObjects.add(task); // Armazena o objeto completo
+                    tasks.add(desc); // Compatibilidade antiga
+                    listModel.addElement(task.toDisplayString()); // Exibição correta
+                    creationDates.put(tasks.size() - 1, createdDate);
+
+                    // Se a tarefa estiver concluída, adicione-a ao mapa de tarefas concluídas
+                    if (isCompleted) {
+                        completedTasks.put(tasks.size() - 1, completedDate);
+                    }
+                } else {
+                    System.err.println("Linha malformada: " + line);
+                }
             }
         } catch (IOException e) {
+            System.err.println("Erro ao carregar tarefas: " + e.getMessage());
             e.printStackTrace();
         }
+
         updateProgress();
     }
+
+
+
 
     public int getCompletedCount() {
         return completedTasks.size();
@@ -326,7 +424,7 @@ public class TaskList extends JScrollPane {
         @Override
         public Component getListCellRendererComponent(JList<? extends String> list, String value,
                                                       int index, boolean isSelected, boolean cellHasFocus) {
-            label.setText(tasks.get(index));
+            label.setText(listModel.get(index));
             checkBox.setSelected(completedTasks.containsKey(index));
 
             if (isSelected) {
@@ -444,14 +542,20 @@ public class TaskList extends JScrollPane {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         String[] parts = line.split(";");
-                        if (parts.length >= 3) {
+                        if (parts.length >= 4) {
                             String task = parts[0];
                             boolean isCompleted = Boolean.parseBoolean(parts[1]);
-                            String dateStr = parts[2];
+                            long createdMillis = Long.parseLong(parts[2]);
+                            Date createdDate = new Date(createdMillis);
 
                             String status = isCompleted ? "🍀 Concluída" : "🔴 Pendente";
-                            doc.insertString(doc.getLength(), "• " + task + " - " + status + "\n\n", defaultStyle);
+
+                            SimpleDateFormat formatter = new SimpleDateFormat("EEEE, dd/MM/yyyy", new Locale("pt", "BR"));
+                            String dataFormatada = formatter.format(createdDate);
+
+                            doc.insertString(doc.getLength(), "• " + task + "\n  📅 Adicionada: " + dataFormatada + " - " + status + "\n\n", defaultStyle);
                         }
+
                     }
                 }
             }
