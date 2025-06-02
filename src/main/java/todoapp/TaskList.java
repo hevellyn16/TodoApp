@@ -1,5 +1,8 @@
 package todoapp;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import javax.swing.*;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
@@ -20,8 +23,8 @@ public class TaskList extends JScrollPane {
     private ArrayList<String> tasks;
     private ProgressUpdateListener progressListener;
     private Map<Integer, Date> completedTasks;
-    private static final String FILE_MAIN = "tasks.txt";
-    private static final String FILE_HISTORY = "tasks_history.txt";
+    private static final String FILE_MAIN = "tasks.json";
+    private static final String FILE_HISTORY = "tasks_history.json";
     private Map<Integer, Date> creationDates = new HashMap<>();
 
 
@@ -62,35 +65,38 @@ public class TaskList extends JScrollPane {
         setBorder(BorderFactory.createEmptyBorder());
     }
 
-    private void saveMainFile(){
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_MAIN))) {
+    private void saveMainFile() {
+        try (FileWriter writer = new FileWriter(FILE_MAIN)) {
+            JSONArray taskArray = new JSONArray();
             for (int i = 0; i < tasks.size(); i++) {
                 if (!completedTasks.containsKey(i)) {
-                    writer.write(tasks.get(i));
-                    writer.newLine();
+                    taskArray.put(tasks.get(i));
                 }
             }
-        } catch(IOException e){
+            writer.write(taskArray.toString(2)); // indentado
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void saveHistoryFile(){
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_HISTORY))) {
+
+    private void saveHistoryFile() {
+        try (FileWriter writer = new FileWriter(FILE_HISTORY)) {
+            JSONArray taskArray = new JSONArray();
             for (int i = 0; i < tasks.size(); i++) {
-                String task = tasks.get(i);
-                boolean isCompleted = completedTasks.containsKey(i);
+                JSONObject taskObj = new JSONObject();
+                taskObj.put("description", tasks.get(i));
+                taskObj.put("completed", completedTasks.containsKey(i));
                 Date completedDate = completedTasks.get(i);
-
-                String dateStr = (completedDate != null) ? String.valueOf(completedDate.getTime()) : "null";
-
-                writer.write(task + ";" + isCompleted + ";" + dateStr);
-                writer.newLine();
+                taskObj.put("completedDate", completedDate != null ? completedDate.getTime() : JSONObject.NULL);
+                taskArray.put(taskObj);
             }
-        } catch(IOException e){
+            writer.write(taskArray.toString(2));
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
 
     private void updateProgress() {
         if (progressListener != null) {
@@ -262,16 +268,25 @@ public class TaskList extends JScrollPane {
         if (!file.exists()) return;
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            StringBuilder sb = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
-                tasks.add(line);
-                listModel.addElement(line);
+                sb.append(line);
             }
-        } catch (IOException e) {
+
+            JSONArray taskArray = new JSONArray(sb.toString());
+            for (int i = 0; i < taskArray.length(); i++) {
+                String task = taskArray.getString(i);
+                tasks.add(task);
+                listModel.addElement(task);
+            }
+        } catch (IOException | org.json.JSONException e) {
             e.printStackTrace();
         }
+
         updateProgress();
     }
+
 
     public int getCompletedCount() {
         return completedTasks.size();
@@ -440,21 +455,26 @@ public class TaskList extends JScrollPane {
 
             File file = new File(FILE_HISTORY);
             if (file.exists()) {
+                StringBuilder sb = new StringBuilder();
                 try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
-                        String[] parts = line.split(";");
-                        if (parts.length >= 3) {
-                            String task = parts[0];
-                            boolean isCompleted = Boolean.parseBoolean(parts[1]);
-                            String dateStr = parts[2];
-
-                            String status = isCompleted ? "🍀 Concluída" : "🔴 Pendente";
-                            doc.insertString(doc.getLength(), "• " + task + " - " + status + "\n\n", defaultStyle);
-                        }
+                        sb.append(line);
                     }
                 }
+
+                JSONArray taskArray = new JSONArray(sb.toString());
+                for (int i = 0; i < taskArray.length(); i++) {
+                    JSONObject taskObj = taskArray.getJSONObject(i);
+                    String task = taskObj.getString("description");
+                    boolean isCompleted = taskObj.getBoolean("completed");
+
+                    String status = isCompleted ? "🍀 Concluída" : "🔴 Pendente";
+                    doc.insertString(doc.getLength(), "• " + task + " - " + status + "\n\n", defaultStyle);
+                }
             }
+
+
         } catch (Exception e) {
             e.printStackTrace();
         }
