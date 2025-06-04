@@ -6,15 +6,16 @@ import java.awt.event.*;
 
 public class TaskInputPanel extends JPanel {
     private JButton openActionsButton; // botão redondo com "+"
-    private JButton finishButton;      // botão de finalizar dia (precisa estar acessível)
-    private ActionListener finishDayListener; // armazena listener se botão ainda não foi criado
     private TaskList taskList;
 
     public TaskInputPanel(TaskList taskList) {
         this.taskList = taskList;
         setLayout(new BorderLayout());
         createFloatingButton();
+
     }
+
+
 
     private void createFloatingButton() {
         openActionsButton = new JButton("+");
@@ -69,12 +70,9 @@ public class TaskInputPanel extends JPanel {
         taskInput.setPreferredSize(new Dimension(300, 40));
 
         JButton addButton = new JButton("Adicionar");
-        JButton deleteButton = new JButton("Excluir");
-        finishButton = new JButton("Finalizar dia");
-        JButton viewAllButton = new JButton("Ver todas");
 
         // Estilo dos botões
-        JButton[] buttons = {addButton, deleteButton, finishButton, viewAllButton};
+        JButton[] buttons = {addButton};
         for (JButton btn : buttons) {
             btn.setFont(new Font(Font.SERIF, Font.BOLD, 16));
             btn.setPreferredSize(new Dimension(160, 40));
@@ -82,10 +80,6 @@ public class TaskInputPanel extends JPanel {
         }
 
         addButton.setBackground(new Color(207, 196, 177));
-        deleteButton.setBackground(Color.BLACK);
-        deleteButton.setForeground(Color.WHITE);
-        finishButton.setBackground(new Color(129, 174, 45));
-        viewAllButton.setBackground(new Color(236, 179, 16));
 
         // Painel com o campo de texto e os botões
         JPanel panel = new JPanel();
@@ -98,16 +92,11 @@ public class TaskInputPanel extends JPanel {
 
         panel.add(taskInput, gbc);
 
-        gbc.gridwidth = 1;
-        gbc.gridy = 1; gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 2; // ocupa toda a linha
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.fill = GridBagConstraints.NONE; // evita esticar
         panel.add(addButton, gbc);
-        gbc.gridx = 1;
-        panel.add(deleteButton, gbc);
-
-        gbc.gridy = 2; gbc.gridx = 0;
-        panel.add(finishButton, gbc);
-        gbc.gridx = 1;
-        panel.add(viewAllButton, gbc);
 
         // Ações dos botões
         addButton.addActionListener(e -> {
@@ -120,30 +109,7 @@ public class TaskInputPanel extends JPanel {
             }
         });
 
-        deleteButton.addActionListener(e -> {
-            int selectedIndex = taskList.getSelectedIndex();
-            if (selectedIndex != -1) {
-                taskList.removeTask(selectedIndex);
-            } else {
-                JOptionPane.showMessageDialog(null, "Selecione uma tarefa para excluir.", "Erro", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-
-        viewAllButton.addActionListener(e -> taskList.showAllTasks());
-
-        // Aplica listener se já foi definido
-        if (finishDayListener != null) {
-            finishButton.addActionListener(finishDayListener);
-        }
-
         taskFrame.add(panel);
-        taskFrame.setVisible(true);
-    }
-
-    public void setFinishDayAction(ActionListener listener) {
-        this.finishDayListener = listener;
-        if (finishButton != null) {
-            finishButton.addActionListener(listener);
-        }
+        taskFrame.setVisible(true); // Mostrar a janela
     }
 }

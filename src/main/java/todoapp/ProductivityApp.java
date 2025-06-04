@@ -14,7 +14,7 @@ public class ProductivityApp {
         initializeFrame();
         createComponents();
         setupLayout();
-        setupEventHandlers();
+//        setupEventHandlers();
     }
 
     private void initializeFrame() {
@@ -49,13 +49,13 @@ public class ProductivityApp {
         frame.add(contentPane, BorderLayout.CENTER);
     }
 
-    private void setupEventHandlers() {
-        // Configura o botão "Finalizar Dia" para limpar tarefas concluídas
-        inputPanel.setFinishDayAction(e -> {
-            taskList.finalizeDay();
-            JOptionPane.showMessageDialog(frame, "Dia finalizado! Tarefas concluídas removidas.");
-        });
-    }
+//    private void setupEventHandlers() {
+//        // Configura o botão "Finalizar Dia" para limpar tarefas concluídas
+//        inputPanel.setFinishDayAction(e -> {
+//            taskList.finalizeDay();
+//            JOptionPane.showMessageDialog(frame, "Dia finalizado! Tarefas concluídas removidas.");
+//        });
+//    }
 
     public void show() {
         frame.setVisible(true);

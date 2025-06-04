@@ -54,11 +54,31 @@ public class TaskList extends JScrollPane {
             @Override
             public void mouseClicked(MouseEvent e) {
                 int index = list.locationToIndex(e.getPoint());
-                if (index >= 0 && e.getClickCount() == 2) {
-                    editTask(index);
+                if (index >= 0) {
+                    if (SwingUtilities.isRightMouseButton(e)) {
+                        // Menu de contexto para excluir
+                        JPopupMenu menu = new JPopupMenu();
+                        JMenuItem deleteItem = new JMenuItem("Excluir");
+                        deleteItem.addActionListener(ev -> {
+                            int confirm = JOptionPane.showConfirmDialog(
+                                    list,
+                                    "Tem certeza que deseja excluir esta tarefa?",
+                                    "Confirmar exclusão",
+                                    JOptionPane.YES_NO_OPTION
+                            );
+                            if (confirm == JOptionPane.YES_OPTION) {
+                                removeTask(index);
+                            }
+                        });
+                        menu.add(deleteItem);
+                        menu.show(list, e.getX(), e.getY());
+                    } else if (e.getClickCount() == 2) {
+                        editTask(index);
+                    }
                 }
             }
         });
+
 
 
         setViewportView(list);

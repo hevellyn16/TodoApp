@@ -1,12 +1,5 @@
-[
-  {
-    "description": "new",
-    "completed": false,
-    "completedDate": null
-  },
-  {
-    "description": "opa",
-    "completed": false,
-    "completedDate": null
-  }
-]
+[{
+  "description": "terminar telas - valentine day",
+  "completed": false,
+  "completedDate": null
+}]
